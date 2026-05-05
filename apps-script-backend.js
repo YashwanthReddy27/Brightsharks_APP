@@ -31,23 +31,10 @@ function doPost(e) {
   }
 }
 
-function doGet(e) {
-  try {
-    const action = e.parameter.action;
-    if (action) {
-      const result = route(e.parameter);
-      return ContentService
-        .createTextOutput(JSON.stringify(result))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: true, message: "TeamPulse v2 API running." }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
+function doGet() {
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: true, message: "TeamPulse v2 API running." }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function jsonResponse(data) {

@@ -8,14 +8,17 @@ const DEMO_MODE = API_URL.includes("YOUR_DEPLOYMENT_ID");
 const api = async (payload) => {
   if (DEMO_MODE) return demoHandler(payload);
   try {
-    const res = await fetch(API_URL, {
+    const url = API_URL + "?ts=" + Date.now();
+    const res = await fetch(url, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain" },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
     });
-    return res.json();
-  } catch { return { success: false, error: "Network error" }; }
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch (err) {
+    return { success: false, error: "Network error: " + err.message };
+  }
 };
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
