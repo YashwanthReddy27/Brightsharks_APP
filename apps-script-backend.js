@@ -123,7 +123,7 @@ function inviteEmployee(data) {
   sheet.appendRow([userId, data.email, password, data.name, "employee", data.visaType || ""]);
 
   // Send welcome email
-  const appUrl = "https://your-teampulse-vercel-url.vercel.app"; // ← update with your Vercel URL
+  const appUrl = "https://brightsharks-app.vercel.app/"; // ← update with your Vercel URL
   const visaLabel = data.visaType === "STEM_OPT" ? "STEM OPT" : data.visaType === "H1B" ? "H-1B" : data.visaType || "";
 
   const html = `

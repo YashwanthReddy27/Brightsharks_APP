@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzeXZWD3CBa-KTVofrWg6bixBsyYDfJQfy4pLzgjVUUxCQZgVWsCifYf2bZCRybdN97/exec";
 const DEMO_MODE = API_URL.includes("YOUR_DEPLOYMENT_ID");
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
