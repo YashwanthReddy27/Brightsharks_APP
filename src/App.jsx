@@ -1,21 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const API_URL = "https://script.google.com/macros/s/AKfycbzeXZWD3CBa-KTVofrWg6bixBsyYDfJQfy4pLzgjVUUxCQZgVWsCifYf2bZCRybdN97/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzeXZWD3CBa-KTVofrWg6bixBsyYDfJQfy4pLzgjVUUxCQZgVWsCifYf2bZCRybdN97/exec"; // ← paste your Apps Script URL here
 const DEMO_MODE = API_URL.includes("YOUR_DEPLOYMENT_ID");
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const api = async (payload) => {
   if (DEMO_MODE) return demoHandler(payload);
   try {
-    const url = API_URL + "?ts=" + Date.now();
-    const res = await fetch(url, {
+    const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
+      redirect: "follow",
     });
     const text = await res.text();
-    return JSON.parse(text);
+    try { return JSON.parse(text); }
+    catch { return { success: false, error: "Bad response from server: " + text.slice(0, 100) }; }
   } catch (err) {
     return { success: false, error: "Network error: " + err.message };
   }
