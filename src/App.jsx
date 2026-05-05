@@ -8,7 +8,12 @@ const DEMO_MODE = API_URL.includes("YOUR_DEPLOYMENT_ID");
 const api = async (payload) => {
   if (DEMO_MODE) return demoHandler(payload);
   try {
-    const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+    const res = await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload),
+    });
     return res.json();
   } catch { return { success: false, error: "Network error" }; }
 };
