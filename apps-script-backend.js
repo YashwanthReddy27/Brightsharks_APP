@@ -1,5 +1,5 @@
 // ============================================================
-// TeamPulse v2 — Google Apps Script Backend
+// BrightSharks v2 — Google Apps Script Backend
 // Deploy: Extensions → Apps Script → Deploy as Web App
 //         Execute as: Me | Who has access: Anyone
 // ============================================================
@@ -33,7 +33,7 @@ function doPost(e) {
 
 function doGet() {
   return ContentService
-    .createTextOutput(JSON.stringify({ success: true, message: "TeamPulse v2 API running." }))
+    .createTextOutput(JSON.stringify({ success: true, message: "BrightSharks v2 API running." }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -84,9 +84,10 @@ function getAllUsers() {
 function createUser(data) {
   const sheet = getSheet(SHEETS.USERS);
   const rows  = sheet.getDataRange().getValues();
+  const inputEmail = (data.email || "").toLowerCase().trim();
   // Check for duplicate email
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1] === data.email) return { success: false, error: "A user with this email already exists." };
+    if ((rows[i][1] || "").toLowerCase().trim() === inputEmail) return { success: false, error: "A user with this email already exists." };
   }
   const id = "u_" + Utilities.getUuid().replace(/-/g, "").slice(0, 10);
   sheet.appendRow([id, data.email, data.password, data.name, data.role, data.visaType || ""]);
@@ -113,8 +114,9 @@ function inviteEmployee(data) {
   const rows  = sheet.getDataRange().getValues();
 
   // Check if email already exists
+  const inputEmail = (data.email || "").toLowerCase().trim();
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1] === data.email) {
+    if ((rows[i][1] || "").toLowerCase().trim() === inputEmail) {
       return { success: false, error: "An account with this email already exists." };
     }
   }
@@ -135,12 +137,12 @@ function inviteEmployee(data) {
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
       <div style="background:#0c0d10;padding:28px 32px;border-radius:10px 10px 0 0">
-        <h1 style="color:#6c8fff;margin:0;font-size:1.6rem;letter-spacing:-0.5px">TeamPulse</h1>
+        <h1 style="color:#6c8fff;margin:0;font-size:1.6rem;letter-spacing:-0.5px">BrightSharks</h1>
         <p style="color:#888;margin:6px 0 0;font-size:13px">You've been invited to the team portal</p>
       </div>
       <div style="background:#f9f9f9;padding:28px 32px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 10px 10px">
         <p style="font-size:15px">Hi <strong>${data.name}</strong>,</p>
-        <p>${data.invitedBy || "Your manager"} has added you to <strong>TeamPulse</strong> — your compliance and evaluation portal.</p>
+        <p>${data.invitedBy || "Your manager"} has added you to <strong>BrightSharks</strong> — your compliance and evaluation portal.</p>
 
         <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:20px;margin:24px 0">
           <p style="margin:0 0 12px;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#888">Your Login Details</p>
@@ -164,7 +166,7 @@ function inviteEmployee(data) {
     </div>`;
 
   try {
-    MailApp.sendEmail({ to: data.email, subject: `Welcome to TeamPulse — Your Login Details`, htmlBody: html });
+    MailApp.sendEmail({ to: data.email, subject: `Welcome to BrightSharks — Your Login Details`, htmlBody: html });
   } catch (e) {
     // Still return success even if email fails — user was created
     return { success: true, warning: "User created but email failed: " + e.message };
@@ -193,9 +195,10 @@ function getManagers() {
 function login(data) {
   const sheet = getSheet(SHEETS.USERS);
   const rows  = sheet.getDataRange().getValues();
+  const inputEmail = (data.email || "").toLowerCase().trim();
   for (let i = 1; i < rows.length; i++) {
     const [id, email, password, name, role, visaType] = rows[i];
-    if (email === data.email && password === data.password) {
+    if ((email || "").toLowerCase().trim() === inputEmail && password === data.password) {
       return { success: true, user: { id, email, name, role, visaType } };
     }
   }
@@ -393,7 +396,7 @@ function emailSupportRequest(data) {
   const body = `
     <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
       <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-        <h2 style="color:#e8c97e;margin:0">TeamPulse</h2>
+        <h2 style="color:#e8c97e;margin:0">BrightSharks</h2>
         <p style="color:#aaa;margin:4px 0 0;font-size:13px">Support Request</p>
       </div>
       <div style="background:#f9f9f9;padding:24px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px">
@@ -415,12 +418,12 @@ function emailManager4thWeek(data, allWeekly) {
   const body = `
     <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
       <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-        <h2 style="color:#6c8fff;margin:0">TeamPulse</h2>
+        <h2 style="color:#6c8fff;margin:0">BrightSharks</h2>
         <p style="color:#aaa;margin:4px 0 0;font-size:13px">STEM OPT — 4-Week Milestone</p>
       </div>
       <div style="background:#f9f9f9;padding:24px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px">
         <p><strong>${data.employeeName}</strong> has completed their <strong>${allWeekly.length}th weekly evaluation</strong> (every 4th week milestone).</p>
-        <p>Please log in to TeamPulse to review and approve their 4-week period evaluations.</p>
+        <p>Please log in to BrightSharks to review and approve their 4-week period evaluations.</p>
       </div>
     </div>`;
   managers.forEach(email => {
@@ -440,7 +443,7 @@ function sendStemThursdayReminder() {
     if (!hasSubmittedWeekly(emp.id, week)) {
       sendReminderEmail(emp.email, emp.name, "STEM Weekly Evaluation Due", `
         <p>This is a reminder to complete your <strong>weekly STEM OPT evaluation</strong> for ${week}.</p>
-        <p>Please log in to TeamPulse and submit your evaluation today.</p>
+        <p>Please log in to BrightSharks and submit your evaluation today.</p>
       `);
     }
   });
@@ -471,7 +474,7 @@ function sendStemMondayUrgent() {
       missing.push(emp.name);
       sendReminderEmail(emp.email, emp.name, "🚨 URGENT: STEM Evaluation Overdue", `
         <p style="color:#c00"><strong>URGENT:</strong> Your STEM OPT weekly evaluation for ${lastWeek} is still missing.</p>
-        <p>Please submit it immediately in TeamPulse.</p>
+        <p>Please submit it immediately in BrightSharks.</p>
       `);
     }
   });
@@ -487,7 +490,7 @@ function sendStemMondayUrgent() {
           htmlBody: `
             <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
               <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-                <h2 style="color:#6c8fff;margin:0">TeamPulse</h2>
+                <h2 style="color:#6c8fff;margin:0">BrightSharks</h2>
               </div>
               <div style="background:#f9f9f9;padding:24px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px">
                 <p>The following employees have <strong>not submitted</strong> their STEM OPT evaluation for <strong>${lastWeek}</strong>:</p>
@@ -509,7 +512,7 @@ function sendH1BDayBeforeReminder() {
     if (!hasSubmittedMonthly(emp.id, nextMonth)) {
       sendReminderEmail(emp.email, emp.name, "📋 H-1B Monthly Evaluation Due Tomorrow", `
         <p>Your <strong>monthly H-1B evaluation</strong> for ${nextMonth} is due <strong>tomorrow</strong>.</p>
-        <p>Please log in to TeamPulse and submit it on time.</p>
+        <p>Please log in to BrightSharks and submit it on time.</p>
       `);
     }
   });
@@ -523,7 +526,7 @@ function sendH1BEvalDayReminder() {
     if (!hasSubmittedMonthly(emp.id, month)) {
       sendReminderEmail(emp.email, emp.name, "📋 H-1B Monthly Evaluation Due Today", `
         <p>Your <strong>monthly H-1B evaluation</strong> for ${month} is due <strong>today</strong>.</p>
-        <p>Please complete it now in TeamPulse.</p>
+        <p>Please complete it now in BrightSharks.</p>
       `);
     }
   });
@@ -540,7 +543,7 @@ function sendH1BUrgentReminder() {
       missing.push(emp.name);
       sendReminderEmail(emp.email, emp.name, "🚨 URGENT: H-1B Evaluation Overdue", `
         <p style="color:#c00"><strong>URGENT:</strong> Your H-1B monthly evaluation for ${month} is overdue.</p>
-        <p>Please submit it <strong>immediately</strong> in TeamPulse.</p>
+        <p>Please submit it <strong>immediately</strong> in BrightSharks.</p>
       `);
     }
   });
@@ -556,7 +559,7 @@ function sendH1BUrgentReminder() {
           htmlBody: `
             <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
               <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-                <h2 style="color:#ff8c42;margin:0">TeamPulse</h2>
+                <h2 style="color:#ff8c42;margin:0">BrightSharks</h2>
               </div>
               <div style="background:#f9f9f9;padding:24px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px">
                 <p>The following employees have <strong>not submitted</strong> their H-1B monthly evaluation for <strong>${month}</strong>:</p>
@@ -588,14 +591,14 @@ function sendH1BMonthlyManagerNudge() {
         htmlBody: `
           <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
             <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-              <h2 style="color:#ff8c42;margin:0">TeamPulse</h2>
+              <h2 style="color:#ff8c42;margin:0">BrightSharks</h2>
               <p style="color:#aaa;margin:4px 0 0;font-size:13px">Monthly Manager Review — ${month}</p>
             </div>
             <div style="background:#f9f9f9;padding:24px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px">
               <p>Please review and approve H-1B monthly evaluations for <strong>${month}</strong>.</p>
               <h4 style="margin-top:16px">✅ Submitted:</h4><ul>${submittedList}</ul>
               <h4 style="margin-top:16px">⏳ Pending:</h4><ul>${pendingList}</ul>
-              <p style="margin-top:20px">Log in to TeamPulse to review all submissions.</p>
+              <p style="margin-top:20px">Log in to BrightSharks to review all submissions.</p>
             </div>
           </div>`
       });
@@ -638,7 +641,7 @@ function checkH1BExpiry(userId, data) {
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
         <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-          <h2 style="color:#ffbe3d;margin:0">TeamPulse — H-1B Expiry Alert</h2>
+          <h2 style="color:#ffbe3d;margin:0">BrightSharks — H-1B Expiry Alert</h2>
         </div>
         <div style="background:#fff8ec;padding:24px 28px;border:1px solid #f0d080;border-top:none;border-radius:0 0 8px 8px">
           <p>⚠️ <strong>${data.i983?.studentName || "An employee"}</strong>'s H-1B visa expires in <strong>6 months (${data.h1bExpiry})</strong>.</p>
@@ -661,12 +664,12 @@ function sendReminderEmail(toEmail, name, subject, bodyHtml) {
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:600px;color:#333">
       <div style="background:#1a1a2e;padding:20px 28px;border-radius:8px 8px 0 0">
-        <h2 style="color:#e8c97e;margin:0">TeamPulse</h2>
+        <h2 style="color:#e8c97e;margin:0">BrightSharks</h2>
       </div>
       <div style="background:#f9f9f9;padding:24px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px">
         <p>Hi ${name},</p>
         ${bodyHtml}
-        <p style="color:#888;font-size:12px;margin-top:24px">This is an automated reminder from TeamPulse.</p>
+        <p style="color:#888;font-size:12px;margin-top:24px">This is an automated reminder from BrightSharks.</p>
       </div>
     </div>`;
   try { MailApp.sendEmail({ to: toEmail, subject, htmlBody: html }); } catch (e) {}

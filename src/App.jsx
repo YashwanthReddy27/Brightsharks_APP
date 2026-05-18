@@ -67,12 +67,13 @@ const DEMO_MONTHLY = [];
 function demoHandler(p) {
   const { action, data } = p;
   if (action === "login") {
-    const u = DEMO_USERS.find(u => u.email === data.email && u.password === data.password);
+    const inputEmail = (data.email || "").toLowerCase().trim();
+    const u = DEMO_USERS.find(u => u.email.toLowerCase() === inputEmail && u.password === data.password);
     return u ? { success: true, user: u } : { success: false, error: "Invalid credentials" };
   }
   if (action === "getManagers") return { success: true, data: DEMO_USERS.filter(u => u.role === "manager").map(u => ({ id: u.id, name: u.name, email: u.email })) };
   if (action === "inviteEmployee") {
-    const exists = DEMO_USERS.find(u => u.email === data.email);
+    const exists = DEMO_USERS.find(u => u.email.toLowerCase() === (data.email || "").toLowerCase());
     if (exists) return { success: false, error: "An account with this email already exists." };
     const newUser = { id: "u_" + Date.now(), email: data.email, password: data.name.split(" ")[0] + "@1234", name: data.name, role: "employee", visaType: data.visaType };
     DEMO_USERS.push(newUser);
@@ -80,7 +81,7 @@ function demoHandler(p) {
   }
   if (action === "getAllUsers") return { success: true, data: DEMO_USERS.map(u => ({ ...u })) };
   if (action === "createUser") {
-    if (DEMO_USERS.find(u => u.email === data.email)) return { success: false, error: "Email already exists." };
+    if (DEMO_USERS.find(u => u.email.toLowerCase() === (data.email || "").toLowerCase())) return { success: false, error: "Email already exists." };
     const newUser = { id: "u" + Date.now(), ...data };
     DEMO_USERS.push(newUser);
     return { success: true, id: newUser.id };
@@ -854,34 +855,68 @@ function ManagerTeam({ user }) {
 
       {editingEmployee && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditingEmployee(null)}>
-          <div className="modal">
+          <div className="modal" style={{ width: 640 }}>
             <div className="modal-title">Edit Employee: {editingEmployee.name}</div>
             {msg && <div className={`alert alert-${msg.type}`}>{msg.text}</div>}
+
+            <div className="section-heading">Basic Information</div>
             <div className="grid-2">
-              <div className="field"><label>Client Name</label><input value={editProfile.clientName || ""} onChange={e => setEditProfile(p => ({ ...p, clientName: e.target.value }))} /></div>
-              <div className="field"><label>Client Manager</label><input value={editProfile.clientManager || ""} onChange={e => setEditProfile(p => ({ ...p, clientManager: e.target.value }))} /></div>
-              <div className="field"><label>Team Lead</label><input value={editProfile.teamLead || ""} onChange={e => setEditProfile(p => ({ ...p, teamLead: e.target.value }))} /></div>
-              <div className="field"><label>Role</label><input value={editProfile.role || ""} onChange={e => setEditProfile(p => ({ ...p, role: e.target.value }))} /></div>
-              <div className="field"><label>Visa Type</label>
+              <div className="field"><label>Client Name</label><input value={editProfile.clientName || ""} onChange={e => setEditProfile(p => ({ ...p, clientName: e.target.value }))} placeholder="e.g. Acme Corp" /></div>
+              <div className="field"><label>Client Manager</label><input value={editProfile.clientManager || ""} onChange={e => setEditProfile(p => ({ ...p, clientManager: e.target.value }))} placeholder="e.g. Sarah Lee" /></div>
+              <div className="field"><label>Team Lead</label><input value={editProfile.teamLead || ""} onChange={e => setEditProfile(p => ({ ...p, teamLead: e.target.value }))} placeholder="e.g. John Doe" /></div>
+              <div className="field"><label>Role / Title</label><input value={editProfile.role || ""} onChange={e => setEditProfile(p => ({ ...p, role: e.target.value }))} placeholder="e.g. Software Engineer" /></div>
+              <div className="field col-span-2"><label>Current Projects</label><input value={editProfile.currentProjects || ""} onChange={e => setEditProfile(p => ({ ...p, currentProjects: e.target.value }))} placeholder="e.g. Platform migration" /></div>
+              <div className="field">
+                <label>Visa Type</label>
                 <select value={editProfile.visaType || ""} onChange={e => setEditProfile(p => ({ ...p, visaType: e.target.value }))}>
                   <option value="">Select…</option>
                   <option value="STEM_OPT">STEM OPT</option>
                   <option value="H1B">H-1B</option>
                   <option value="GC">Green Card</option>
                   <option value="USC">US Citizen</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
-              {(editProfile.visaType === "STEM_OPT") && (
-                <div className="field col-span-2"><label>STEM OPT Start Date</label><input type="date" value={editProfile.stemOptStart || ""} onChange={e => setEditProfile(p => ({ ...p, stemOptStart: e.target.value }))} /></div>
-              )}
-              {(editProfile.visaType === "H1B") && (
-                <>
+            </div>
+
+            {/* STEM OPT fields — always shown when visa type is STEM_OPT */}
+            {(editProfile.visaType === "STEM_OPT" || editProfile.visaType === "") && (
+              <>
+                <div className="section-heading" style={{ marginTop: 8 }}>STEM OPT Details</div>
+                <div className="grid-2">
+                  <div className="field col-span-2">
+                    <label>STEM OPT Start Date</label>
+                    <input type="date" value={editProfile.stemOptStart || ""} onChange={e => setEditProfile(p => ({ ...p, stemOptStart: e.target.value }))} />
+                    {editProfile.stemOptStart && (
+                      <div style={{ marginTop: 10 }}><StemMilestones stemOptStart={editProfile.stemOptStart} /></div>
+                    )}
+                  </div>
+                </div>
+                <div className="section-heading" style={{ marginTop: 8 }}>I-983 Training Plan</div>
+                <div className="grid-2">
+                  <div className="field"><label>Student Full Name</label><input value={editProfile.i983?.studentName || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), studentName: e.target.value } }))} placeholder="Student's legal name" /></div>
+                  <div className="field"><label>DSO Name</label><input value={editProfile.i983?.dso || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), dso: e.target.value } }))} placeholder="DSO at university" /></div>
+                  <div className="field col-span-2"><label>Employer / Company</label><input value={editProfile.i983?.employer || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), employer: e.target.value } }))} placeholder="Employing company name" /></div>
+                  <div className="field col-span-2"><label>Training Plan Description</label><textarea value={editProfile.i983?.trainingPlan || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), trainingPlan: e.target.value } }))} placeholder="Describe the technical skills and knowledge to be gained…" /></div>
+                  <div className="field col-span-2"><label>Goals and Objectives</label><textarea value={editProfile.i983?.goals || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), goals: e.target.value } }))} placeholder="Specific goals and measurable objectives…" /></div>
+                  <div className="field col-span-2"><label>Employer Oversight Plan</label><textarea value={editProfile.i983?.employerOversight || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), employerOversight: e.target.value } }))} placeholder="How will the employer supervise and evaluate the student…" /></div>
+                  <div className="field col-span-2"><label>Additional Remarks</label><textarea value={editProfile.i983?.additionalRemarks || ""} onChange={e => setEditProfile(p => ({ ...p, i983: { ...(p.i983||{}), additionalRemarks: e.target.value } }))} placeholder="Any additional information…" /></div>
+                </div>
+              </>
+            )}
+
+            {/* H-1B fields — always shown when visa type is H1B */}
+            {editProfile.visaType === "H1B" && (
+              <>
+                <div className="section-heading" style={{ marginTop: 8 }}>H-1B Details</div>
+                <div className="grid-2">
                   <div className="field"><label>H-1B Start Date</label><input type="date" value={editProfile.h1bStart || ""} onChange={e => setEditProfile(p => ({ ...p, h1bStart: e.target.value }))} /></div>
                   <div className="field"><label>H-1B Expiry Date</label><input type="date" value={editProfile.h1bExpiry || ""} onChange={e => setEditProfile(p => ({ ...p, h1bExpiry: e.target.value }))} /></div>
-                  <div className="field col-span-2"><label>LCA Job Duties</label><textarea value={editProfile.lcaJobDuties || ""} onChange={e => setEditProfile(p => ({ ...p, lcaJobDuties: e.target.value }))} /></div>
-                </>
-              )}
-            </div>
+                  <div className="field col-span-2"><label>LCA Job Duties</label><textarea value={editProfile.lcaJobDuties || ""} onChange={e => setEditProfile(p => ({ ...p, lcaJobDuties: e.target.value }))} placeholder="Job duties as described in the Labor Condition Application (LCA)…" style={{ minHeight: 100 }} /></div>
+                </div>
+              </>
+            )}
+
             <div className="modal-actions">
               <button className="btn btn-ghost" onClick={() => setEditingEmployee(null)}>Cancel</button>
               <button className="btn btn-primary" onClick={saveEdit} disabled={saving}>
@@ -1280,22 +1315,42 @@ function ManagerUsers() {
   );
 }
 
+// ─── SESSION HELPERS ─────────────────────────────────────────────────────────
+const SESSION_KEY = "bs_session";
+const loadSession = () => {
+  try { const s = sessionStorage.getItem(SESSION_KEY); return s ? JSON.parse(s) : null; } catch { return null; }
+};
+const saveSession = (user, page) => {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ user, page })); } catch {}
+};
+const clearSession = () => {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+};
+
 // ─── APP SHELL ───────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [page, setPage] = useState("profile");
+  const saved = loadSession();
+  const [user, setUser] = useState(saved?.user || null);
+  const [page, setPage] = useState(saved?.page || "profile");
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [loginMsg, setLoginMsg] = useState(null);
   const [logging, setLogging] = useState(false);
 
+  // Keep session in sync whenever user or page changes
+  useEffect(() => {
+    if (user) saveSession(user, page);
+  }, [user, page]);
+
   const login = async () => {
     if (!loginForm.email || !loginForm.password) return setLoginMsg("Please enter email and password.");
     setLogging(true); setLoginMsg(null);
-    const res = await api({ action: "login", data: loginForm });
+    const res = await api({ action: "login", data: { email: loginForm.email.toLowerCase().trim(), password: loginForm.password } });
     setLogging(false);
     if (res.success) {
+      const defaultPage = res.user.role === "manager" ? "team" : "profile";
       setUser(res.user);
-      setPage(res.user.role === "manager" ? "team" : "profile");
+      setPage(defaultPage);
+      saveSession(res.user, defaultPage);
     } else setLoginMsg(res.error || "Invalid credentials.");
   };
 
@@ -1305,8 +1360,8 @@ export default function App() {
         <style>{CSS}</style>
         <div className="login-page">
           <div className="login-card">
-            <div className="login-logo">TeamPulse</div>
-            <div className="login-sub">Employee management portal</div>
+            <div className="login-logo">BrightSharks</div>
+            <div className="login-sub">Compliance & evaluation portal</div>
             {loginMsg && <div className="alert alert-error">{loginMsg}</div>}
             <div className="field"><label>Email</label><input type="email" placeholder="you@company.com" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} onKeyDown={e => e.key === "Enter" && login()} /></div>
             <div className="field"><label>Password</label><input type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} onKeyDown={e => e.key === "Enter" && login()} /></div>
@@ -1350,7 +1405,7 @@ export default function App() {
       <style>{CSS}</style>
       <div className="shell">
         <div className="sidebar">
-          <div className="sidebar-logo">TeamPulse</div>
+          <div className="sidebar-logo">BrightSharks</div>
           <div className="sidebar-section">Navigation</div>
           {nav.map(n => (
             <div key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)}>
@@ -1363,7 +1418,7 @@ export default function App() {
             <div className="sidebar-user-email">{user.email}</div>
             {badgeLabel && <div className={`sidebar-user-badge ${badgeCls}`}>{badgeLabel}</div>}
             <div style={{ marginTop: 12 }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setUser(null)}>
+              <button className="btn btn-ghost btn-sm" onClick={() => { clearSession(); setUser(null); setLoginForm({ email: "", password: "" }); setLoginMsg(null); }}>
                 <Icon.Logout /> Sign Out
               </button>
             </div>
