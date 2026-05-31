@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const API_URL = "https://script.google.com/macros/s/AKfycbzeXZWD3CBa-KTVofrWg6bixBsyYDfJQfy4pLzgjVUUxCQZgVWsCifYf2bZCRybdN97/exec"; // ← paste your Apps Script URL here
-const DEMO_MODE = API_URL.includes("YOUR_DEPLOYMENT_ID");
+// Data lives in Vercel Postgres, served by /api (see api/index.js).
+// Apps Script is now used only as an email service, called server-side
+// by the Vercel API for invite/support/expiry/4th-week notifications.
+const API_URL = "/api";
+const DEMO_MODE = false;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const api = async (payload) => {
@@ -10,9 +13,8 @@ const api = async (payload) => {
   try {
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      redirect: "follow",
     });
     const text = await res.text();
     try { return JSON.parse(text); }

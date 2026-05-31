@@ -1,17 +1,22 @@
 {
   "name": "teampulse",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:schema": "node scripts/apply-schema.mjs",
+    "db:import": "node scripts/import-from-dump.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
+    "dotenv": "^16.4.5",
     "vite": "^4.4.0"
   }
 }
