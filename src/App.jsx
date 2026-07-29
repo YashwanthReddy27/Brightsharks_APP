@@ -800,7 +800,9 @@ function ManagerTeam({ user }) {
     const res = await api({ action: "inviteEmployee", data: { ...inviteForm, invitedBy: user.name } });
     setInviting(false);
     if (res.success) {
-      setInviteMsg({ type: "success", text: `Invite sent to ${inviteForm.email}!` });
+      setInviteMsg(res.emailSent === false
+        ? { type: "warn", text: `${inviteForm.name} was added, but the welcome email could not be sent (${res.emailError || "email service unavailable"}). Temporary password: ${res.password || "—"}` }
+        : { type: "success", text: `Invite sent to ${inviteForm.email}!` });
       setInviteForm({ name: "", email: "", visaType: "STEM_OPT" });
       // Refresh employee list
       const refresh = await api({ action: "getAllEmployees" });

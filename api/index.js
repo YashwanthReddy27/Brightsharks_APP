@@ -7,7 +7,12 @@
 
 import { sql, shortId } from "./_db.js";
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || "";
+// Apps Script web app that sends the transactional email.
+// The env var wins; the literal below is the currently deployed web app and
+// exists so a missing/forgotten Vercel env var can't silently kill all email.
+const APPS_SCRIPT_URL =
+  process.env.APPS_SCRIPT_URL ||
+  "https://script.google.com/macros/s/AKfycbzeXZWD3CBa-KTVofrWg6bixBsyYDfJQfy4pLzgjVUUxCQZgVWsCifYf2bZCRybdN97/exec";
 
 // ────────────────────────────────────────────────────────────
 // Entry point
@@ -65,16 +70,43 @@ async function route(p) {
 // ────────────────────────────────────────────────────────────
 // Apps Script bridge — for email side-effects only
 // ────────────────────────────────────────────────────────────
+// Returns { ok: true } or { ok: false, error }. Callers that the user is
+// waiting on (invite) surface this; fire-and-forget callers just log it.
 async function notifyAppsScript(payload) {
-  if (!APPS_SCRIPT_URL) return;
+  if (!APPS_SCRIPT_URL) {
+    const error = "Email service is not configured (APPS_SCRIPT_URL is unset).";
+    console.error(error, "action:", payload.action);
+    return { ok: false, error };
+  }
   try {
-    await fetch(APPS_SCRIPT_URL, {
+    // Apps Script /exec answers with a 302 to script.googleusercontent.com;
+    // fetch follows it and the body there is doPost's JSON result.
+    const res = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
     });
+    const text = await res.text();
+    if (!res.ok) {
+      const error = `Email service returned HTTP ${res.status}.`;
+      console.error("Apps Script bridge failed:", error, text.slice(0, 200));
+      return { ok: false, error };
+    }
+    let json = null;
+    try { json = JSON.parse(text); } catch { /* non-JSON = script error page */ }
+    if (!json) {
+      const error = "Email service returned an unexpected response.";
+      console.error("Apps Script bridge failed:", error, text.slice(0, 200));
+      return { ok: false, error };
+    }
+    if (json.success === false) {
+      console.error("Apps Script bridge failed:", json.error);
+      return { ok: false, error: json.error || "Email service error." };
+    }
+    return { ok: true, result: json };
   } catch (e) {
     console.error("Apps Script bridge failed:", e.message);
+    return { ok: false, error: e.message };
   }
 }
 
@@ -148,12 +180,16 @@ async function inviteEmployee(data) {
     VALUES (${userId}, ${data.email}, ${password}, ${data.name}, 'employee', ${data.visaType || null})
   `;
 
-  await notifyAppsScript({
+  const mail = await notifyAppsScript({
     action: "sendInviteEmail",
-    data: { ...data, password, userId },
+    data: { ...data, email: data.email, password, userId },
   });
 
-  return { success: true };
+  // The account exists either way — report the email outcome honestly so the
+  // manager knows whether to hand over the credentials another way.
+  return mail.ok
+    ? { success: true, emailSent: true }
+    : { success: true, emailSent: false, emailError: mail.error, password };
 }
 
 // ────────────────────────────────────────────────────────────

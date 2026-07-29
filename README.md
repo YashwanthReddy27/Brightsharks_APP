@@ -51,6 +51,10 @@ npm run db:import -- ./dump.json
 - In `apps-script-backend.js`, set `VERCEL_API_URL` to your Vercel deploy URL + `/api`.
 - Re-deploy the Apps Script Web App.
 - In Vercel project settings, set env var `APPS_SCRIPT_URL` to the Apps Script web app URL (so the API can trigger emails).
+  `api/index.js` falls back to the last known web app URL if this is unset, but set it — a re-deploy of the
+  Apps Script mints a new `/exec` URL and the fallback goes stale.
+- The Web App must be deployed as **Execute as: Me** / **Who has access: Anyone**, otherwise `MailApp` has no
+  permission to send and every email fails.
 
 ### 6. Deploy frontend
 ```powershell
